@@ -35,10 +35,26 @@ client.on('disconnected', (reason) => {
 
 // Processa cada mensagem recebida
 client.on('message', async (message) => {
-    if (message.isStatus) return; // ignora status do WhatsApp
-    if (message.fromMe) return;   // ignora mensagens enviadas pelo próprio bot
+    // Ignora mensagens sem texto
+    if (!message.body || message.body.trim() === '') return;
+
+    // Ignora mensagens enviadas pelo próprio bot
+    if (message.fromMe) return;
+
+    // Ignora status do WhatsApp
+    if (message.isStatus) return;
+
+    // Ignora mensagens de grupos
+    if (message.from.endsWith('@g.us')) return;
+
+    // Ignora broadcasts e listas
+    if (message.broadcast) return;
+
+    // Só responde conversas privadas (1:1)
+    if (!message.from.endsWith('@c.us')) return;
 
     try {
+        logMessage(message);
         await handleMessage(client, message);
     } catch (error) {
         console.error(`Erro ao processar mensagem: ${error.message}`);
