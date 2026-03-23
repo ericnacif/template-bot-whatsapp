@@ -1,31 +1,49 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const { handleMessage } = require('./src/flows/router');
+const { logMessage } = require('./src/middlewares/logger');
 
-// Inicializa o cliente do WhatsApp configurado para salvar a sua sessão
+// Inicializa o cliente do WhatsApp com sessão salva localmente
 const client = new Client({
-    authStrategy: new LocalAuth()
-});
-
-// Gera o QR Code no terminal para você escanear
-client.on('qr', (qr) => {
-    console.log('📱 Escaneie o QR Code abaixo com o seu WhatsApp:');
-    qrcode.generate(qr, { small: true });
-});
-
-// Avisa quando a conexão foi feita com sucesso
-client.on('ready', () => {
-    console.log('✅ Tudo certo! O template do Bot está conectado e pronto.');
-});
-
-// O que o bot faz quando recebe uma mensagem
-client.on('message', message => {
-    console.log(`📩 Mensagem recebida: ${message.body}`);
-
-    // Uma regrinha de teste: se alguém digitar "ping", ele responde
-    if (message.body === 'ping') {
-        message.reply('pong 🏓! O bot está funcionando perfeitamente.');
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
     }
 });
 
-// Dá a partida no bot
+// Gera o QR Code no terminal para escanear com o WhatsApp
+client.on('qr', (qr) => {
+    console.log('\n📱 Escaneie o QR Code abaixo com o seu WhatsApp:\n');
+    qrcode.generate(qr, { small: true });
+});
+
+// Bot conectado com sucesso
+client.on('ready', () => {
+    console.log('✅ Bot conectado e pronto para atender!');
+});
+
+// Falha na autenticação
+client.on('auth_failure', () => {
+    console.error('❌ Falha na autenticação. Delete a pasta .wwebjs_auth e tente novamente.');
+});
+
+// Bot desconectado
+client.on('disconnected', (reason) => {
+    console.warn(`⚠️  Bot desconectado: ${reason}`);
+});
+
+// Processa cada mensagem recebida
+client.on('message', async (message) => {
+    if (message.isStatus) return; // ignora status do WhatsApp
+    if (message.fromMe) return;   // ignora mensagens enviadas pelo próprio bot
+
+    try {
+        await handleMessage(client, message);
+    } catch (error) {
+        console.error(`Erro ao processar mensagem: ${error.message}`);
+    }
+});
+
+// Inicializa o bot
 client.initialize();
