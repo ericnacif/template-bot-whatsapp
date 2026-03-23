@@ -1,0 +1,25 @@
+{
+  "name": "template-bot-whatsapp",
+  "version": "1.0.0",
+  "description": "Template inicial em Node.js para criar um assistente de WhatsApp",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ericnacif/template-bot-whatsapp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ericnacif/template-bot-whatsapp/issues"
+  },
+  "homepage": "https://github.com/ericnacif/template-bot-whatsapp#readme",
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.6"
+  }
+}
