@@ -22,7 +22,6 @@
 ---
 
 ## 📁 Estrutura do Projeto
-
 ```
 template-bot-whatsapp/
 ├── src/
@@ -46,20 +45,17 @@ template-bot-whatsapp/
 ## 🚀 Como rodar
 
 ### 1. Clone o repositório
-
 ```bash
 git clone https://github.com/ericnacif/template-bot-whatsapp.git
 cd template-bot-whatsapp
 ```
 
 ### 2. Instale as dependências
-
 ```bash
 npm install
 ```
 
 ### 3. Configure as variáveis de ambiente
-
 ```bash
 cp .env.example .env
 ```
@@ -67,7 +63,6 @@ cp .env.example .env
 Edite o `.env` com suas configurações.
 
 ### 4. Inicie o bot
-
 ```bash
 node index.js
 ```
@@ -102,7 +97,6 @@ Bot: Volta ao menu principal
 ```
 
 ### Fluxo visual
-
 ```
 [Usuário digita "oi"]
         │
@@ -124,7 +118,6 @@ Bot: Volta ao menu principal
 ### Alterar os textos do bot
 
 Edite o arquivo `src/utils/messages.js`. Todos os textos estão centralizados lá.
-
 ```js
 const MESSAGES = {
     mainMenu: `👋 Olá! Como posso ajudar?
@@ -139,7 +132,6 @@ const MESSAGES = {
 ### Adicionar um novo comando por palavra-chave
 
 1. Crie um arquivo em `src/commands/meuComando.js`:
-
 ```js
 async function meuComando(message) {
     return message.reply('Resposta do meu comando!');
@@ -148,11 +140,9 @@ module.exports = { meuComando };
 ```
 
 2. Registre no `src/flows/router.js`:
-
 ```js
 const { meuComando } = require('../commands/meuComando');
 
-// ...
 if (body === 'minha-palavra') {
     return meuComando(message);
 }
@@ -161,7 +151,6 @@ if (body === 'minha-palavra') {
 ### Adicionar uma nova opção no menu
 
 Em `src/flows/mainMenu.js`, adicione um novo `case` no switch correspondente:
-
 ```js
 case '4':
     session.step = 'idle';
@@ -173,11 +162,9 @@ case '4':
 ## 🤖 Integrando com IA (OpenAI / Gemini / Claude)
 
 A estrutura está preparada para isso. Instale o SDK desejado e chame dentro de um fluxo:
-
 ```bash
 npm install openai
 ```
-
 ```js
 // src/flows/iaFlow.js
 const OpenAI = require('openai');
