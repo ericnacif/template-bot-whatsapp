@@ -17,25 +17,40 @@
 - ✅ **Sessões por usuário** — cada pessoa tem seu próprio estado de conversa
 - ✅ **Textos centralizados** — edite todas as mensagens em um único arquivo
 - ✅ **Estrutura modular** — fácil de escalar e adicionar novas funcionalidades
+- ✅ **Registro de comandos** — adicione comandos sem mexer no roteador
+- ✅ **Sessões com TTL** — estado expira automaticamente e é trocável por Redis/DB
+- ✅ **Rate limiting** — proteção básica contra flood por usuário
+- ✅ **Logs estruturados** — saída em JSON pronta para observabilidade
+- ✅ **Testes com Vitest + ESLint/Prettier** — qualidade desde o início
 - ✅ **Pronto para IA** — estrutura preparada para plugar OpenAI, Gemini ou Claude
 
 ---
 
 ## 📁 Estrutura do Projeto
+
 ```
 template-bot-whatsapp/
 ├── src/
 │   ├── flows/
-│   │   ├── router.js        # Roteador central — toda mensagem passa por aqui
-│   │   └── mainMenu.js      # Fluxo do menu principal com sessões por usuário
+│   │   ├── router.js         # Roteador central — toda mensagem passa por aqui
+│   │   ├── mainMenu.js       # Fluxo do menu principal com sessões por usuário
+│   │   └── iaFlow.js         # Guia para plugar IA (OpenAI/Gemini/Claude)
 │   ├── commands/
-│   │   └── ping.js          # Exemplo de comando por palavra-chave
+│   │   ├── index.js          # Registro de comandos (keyword → handler)
+│   │   └── ping.js           # Exemplo de comando por palavra-chave
 │   ├── middlewares/
-│   │   └── logger.js        # Log de mensagens no terminal
-│   └── utils/
-│       └── messages.js      # ⭐ Todos os textos do bot em um só lugar
-├── index.js                 # Ponto de entrada — inicializa o cliente
-├── .env.example             # Variáveis de ambiente de exemplo
+│   │   ├── logger.js         # Logger estruturado (JSON) com níveis
+│   │   └── rateLimiter.js    # Rate limiting por usuário
+│   ├── utils/
+│   │   ├── messages.js       # ⭐ Todos os textos do bot em um só lugar
+│   │   └── sessionStore.js   # Sessões em memória com TTL (trocável por Redis/DB)
+│   └── config.js             # Configuração lida do .env
+├── tests/                    # Testes (Vitest)
+├── index.js                  # Ponto de entrada — inicializa o cliente
+├── .env.example              # Variáveis de ambiente de exemplo
+├── eslint.config.mjs         # Configuração do ESLint
+├── .prettierrc.json          # Configuração do Prettier
+├── vitest.config.mjs         # Configuração de testes
 ├── .gitignore
 └── package.json
 ```
@@ -45,26 +60,41 @@ template-bot-whatsapp/
 ## 🚀 Como rodar
 
 ### 1. Clone o repositório
+
 ```bash
 git clone https://github.com/ericnacif/template-bot-whatsapp.git
 cd template-bot-whatsapp
 ```
 
 ### 2. Instale as dependências
+
 ```bash
 npm install
 ```
 
 ### 3. Configure as variáveis de ambiente
+
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com suas configurações.
+Edite o `.env` com suas configurações. As variáveis disponíveis:
+
+| Variável                    | Padrão | Descrição                                   |
+| --------------------------- | ------ | ------------------------------------------- |
+| `SESSION_TTL_MINUTES`       | `30`   | Tempo de vida da sessão de conversa         |
+| `RATE_LIMIT_WINDOW_SECONDS` | `10`   | Janela do rate limit                        |
+| `RATE_LIMIT_MAX_MESSAGES`   | `5`    | Máximo de mensagens por janela              |
+| `LOG_LEVEL`                 | `info` | Nível de log: `error`/`warn`/`info`/`debug` |
+| `OPENAI_API_KEY`            | —      | Chave da OpenAI (opcional)                  |
+| `GEMINI_API_KEY`            | —      | Chave do Gemini (opcional)                  |
+| `ANTHROPIC_API_KEY`         | —      | Chave da Anthropic/Claude (opcional)        |
 
 ### 4. Inicie o bot
+
 ```bash
-node index.js
+npm start       # produção
+npm run dev     # com auto-reload (node --watch)
 ```
 
 ### 5. Escaneie o QR Code
@@ -80,11 +110,13 @@ Abra o WhatsApp no celular → **Dispositivos conectados** → **Conectar dispos
 O bot funciona com um sistema de **sessões por usuário** + **roteamento por etapas**.
 
 ### Palavras-chave (iniciam o atendimento)
+
 ```
 oi / olá / opa / menu / início / start
 ```
 
 ### Navegação por menu
+
 ```
 Usuário: oi
 Bot: Menu principal (opções 1, 2, 3)
@@ -97,6 +129,7 @@ Bot: Volta ao menu principal
 ```
 
 ### Fluxo visual
+
 ```
 [Usuário digita "oi"]
         │
@@ -118,6 +151,7 @@ Bot: Volta ao menu principal
 ### Alterar os textos do bot
 
 Edite o arquivo `src/utils/messages.js`. Todos os textos estão centralizados lá.
+
 ```js
 const MESSAGES = {
     mainMenu: `👋 Olá! Como posso ajudar?
@@ -132,6 +166,7 @@ const MESSAGES = {
 ### Adicionar um novo comando por palavra-chave
 
 1. Crie um arquivo em `src/commands/meuComando.js`:
+
 ```js
 async function meuComando(message) {
     return message.reply('Resposta do meu comando!');
@@ -139,18 +174,23 @@ async function meuComando(message) {
 module.exports = { meuComando };
 ```
 
-2. Registre no `src/flows/router.js`:
-```js
-const { meuComando } = require('../commands/meuComando');
+2. Registre no `src/commands/index.js`:
 
-if (body === 'minha-palavra') {
-    return meuComando(message);
-}
+```js
+const { meuComando } = require('./meuComando');
+
+const commands = {
+    ping: pingCommand,
+    'minha-palavra': meuComando,
+};
 ```
+
+O roteador resolve o comando automaticamente — você não precisa tocar no `router.js`.
 
 ### Adicionar uma nova opção no menu
 
 Em `src/flows/mainMenu.js`, adicione um novo `case` no switch correspondente:
+
 ```js
 case '4':
     session.step = 'idle';
@@ -162,9 +202,11 @@ case '4':
 ## 🤖 Integrando com IA (OpenAI / Gemini / Claude)
 
 A estrutura está preparada para isso. Instale o SDK desejado e chame dentro de um fluxo:
+
 ```bash
 npm install openai
 ```
+
 ```js
 // src/flows/iaFlow.js
 const OpenAI = require('openai');
@@ -183,12 +225,26 @@ Depois registre no `router.js` como qualquer outro fluxo.
 
 ---
 
+## 🧪 Scripts
+
+| Comando              | O que faz                               |
+| -------------------- | --------------------------------------- |
+| `npm start`          | Inicia o bot                            |
+| `npm run dev`        | Inicia com auto-reload (`node --watch`) |
+| `npm test`           | Roda os testes (Vitest)                 |
+| `npm run test:watch` | Testes em modo watch                    |
+| `npm run lint`       | Verifica o código com ESLint            |
+| `npm run format`     | Formata o código com Prettier           |
+
+---
+
 ## 📦 Dependências
 
-| Pacote | Versão | Descrição |
-|--------|--------|-----------|
+| Pacote                                                            | Versão  | Descrição                               |
+| ----------------------------------------------------------------- | ------- | --------------------------------------- |
 | [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) | ^1.34.6 | Interface não-oficial para WhatsApp Web |
-| [qrcode-terminal](https://github.com/gtanner/qrcode-terminal) | ^0.12.0 | Exibe QR Code no terminal |
+| [qrcode-terminal](https://github.com/gtanner/qrcode-terminal)     | ^0.12.0 | Exibe QR Code no terminal               |
+| [dotenv](https://github.com/motdotla/dotenv)                      | ^16.4.7 | Carrega variáveis de ambiente do `.env` |
 
 ---
 

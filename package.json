@@ -1,31 +1,43 @@
 {
-  "name": "template-bot-whatsapp",
-  "version": "1.0.0",
-  "description": "Template inicial em Node.js para criar um assistente de WhatsApp",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ericnacif/template-bot-whatsapp.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/ericnacif/template-bot-whatsapp/issues"
-  },
-  "homepage": "https://github.com/ericnacif/template-bot-whatsapp#readme",
-  "dependencies": {
-    "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.34.6"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
-    "husky": "^9.1.7"
-  }
+    "name": "template-bot-whatsapp",
+    "version": "1.0.0",
+    "description": "Template inicial em Node.js para criar um assistente de WhatsApp",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "node --watch index.js",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "prepare": "husky"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ericnacif/template-bot-whatsapp.git"
+    },
+    "keywords": [],
+    "author": "Eric Nacif",
+    "license": "MIT",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/ericnacif/template-bot-whatsapp/issues"
+    },
+    "homepage": "https://github.com/ericnacif/template-bot-whatsapp#readme",
+    "dependencies": {
+        "dotenv": "^16.4.7",
+        "qrcode-terminal": "^0.12.0",
+        "whatsapp-web.js": "^1.34.6"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^20.5.0",
+        "@commitlint/config-conventional": "^20.5.0",
+        "@eslint/js": "^9.17.0",
+        "eslint": "^9.17.0",
+        "eslint-config-prettier": "^9.1.0",
+        "globals": "^15.14.0",
+        "husky": "^9.1.7",
+        "prettier": "^3.4.2",
+        "vitest": "^2.1.8"
+    }
 }

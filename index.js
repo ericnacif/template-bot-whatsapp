@@ -1,14 +1,17 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { handleMessage } = require('./src/flows/router');
-const { logMessage } = require('./src/middlewares/logger');
+const { rateLimiter } = require('./src/middlewares/rateLimiter');
+const { sessionStore } = require('./src/utils/sessionStore');
+const { MESSAGES } = require('./src/utils/messages');
+const { logInfo, logWarn, logError } = require('./src/middlewares/logger');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    }
+    },
 });
 
 client.on('qr', (qr) => {
@@ -17,15 +20,17 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
+    logInfo('client_ready');
     console.log('✅ Bot conectado e pronto para atender!');
 });
 
 client.on('auth_failure', () => {
+    logError('auth_failure');
     console.error('❌ Falha na autenticação. Delete a pasta .wwebjs_auth e tente novamente.');
 });
 
 client.on('disconnected', (reason) => {
-    console.warn(`⚠️  Bot desconectado: ${reason}`);
+    logWarn('client_disconnected', { reason });
 });
 
 function isPrivateChat(from) {
@@ -33,34 +38,52 @@ function isPrivateChat(from) {
     return from.endsWith('@c.us') || from.endsWith('@lid');
 }
 
+function shouldIgnore(message) {
+    if (message.from.endsWith('@g.us')) return true; // grupos
+    if (message.from === 'status@broadcast') return true;
+    if (message.isStatus) return true;
+    if (message.broadcast) return true;
+    if (!isPrivateChat(message.from)) return true;
+    if (!message.body || message.body.trim() === '') return true;
+    if (message.fromMe) return true;
+    return false;
+}
+
 async function processMessage(message) {
-    // Ignora grupos
-    if (message.from.endsWith('@g.us')) return;
+    if (shouldIgnore(message)) return;
 
-    // Ignora status e broadcasts
-    if (message.from === 'status@broadcast') return;
-    if (message.isStatus) return;
-    if (message.broadcast) return;
-
-    // Só responde conversas privadas
-    if (!isPrivateChat(message.from)) return;
-
-    // Ignora mensagens sem texto
-    if (!message.body || message.body.trim() === '') return;
-
-    // Ignora mensagens enviadas pelo próprio bot
-    if (message.fromMe) return;
+    if (!rateLimiter.allow(message.from)) {
+        logWarn('rate_limited', { from: message.from });
+        try {
+            await message.reply(MESSAGES.rateLimited);
+        } catch (_) {
+            /* ignora falha ao avisar sobre limite */
+        }
+        return;
+    }
 
     try {
-        logMessage(message);
         await handleMessage(client, message);
     } catch (error) {
-        console.error(`Erro ao processar mensagem: ${error.message}`);
+        logError('message_processing_failed', {
+            from: message.from,
+            error: error.message,
+            stack: error.stack,
+        });
+        try {
+            await message.reply(MESSAGES.error);
+        } catch (_) {
+            /* não conseguiu avisar o usuário; já registramos o erro original */
+        }
     }
 }
 
 client.on('message', async (message) => {
     await processMessage(message);
 });
+
+// Limpa sessões expiradas periodicamente para evitar vazamento de memória.
+const sweepInterval = setInterval(() => sessionStore.sweep(), 5 * 60 * 1000);
+sweepInterval.unref?.();
 
 client.initialize();

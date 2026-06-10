@@ -62,6 +62,10 @@ Por favor, digite apenas o *número* da opção desejada.
 Para ver o menu novamente, digite *menu*.`,
 
     noContext: `👋 Olá! Para começar, digite *oi* ou *menu*.`,
+
+    rateLimited: `⏳ Você está enviando mensagens muito rápido. Aguarde alguns segundos, por favor.`,
+
+    error: `😕 Tive um problema ao processar sua mensagem. Tente novamente em instantes.`,
 };
 
 module.exports = { MESSAGES };
