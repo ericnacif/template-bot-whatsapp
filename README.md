@@ -107,6 +107,19 @@ Abra o WhatsApp no celular → **Dispositivos conectados** → **Conectar dispos
 
 ---
 
+## 🧪 Testar sem WhatsApp
+
+Quer validar os menus e comandos sem conectar um número? Use o simulador:
+
+```bash
+npm run simulate
+```
+
+Ele abre um chat no terminal usando o mesmo `router`/`mainMenu` de produção —
+digite `oi`, `1`, `ping` etc. e veja as respostas. Use `/sair` para encerrar.
+
+---
+
 ## 💬 Como funciona o sistema de fluxos
 
 O bot funciona com um sistema de **sessões por usuário** + **roteamento por etapas**.
@@ -256,14 +269,15 @@ O volume preserva a sessão autenticada entre execuções.
 
 ## 🧪 Scripts
 
-| Comando              | O que faz                               |
-| -------------------- | --------------------------------------- |
-| `npm start`          | Inicia o bot                            |
-| `npm run dev`        | Inicia com auto-reload (`node --watch`) |
-| `npm test`           | Roda os testes (Vitest)                 |
-| `npm run test:watch` | Testes em modo watch                    |
-| `npm run lint`       | Verifica o código com ESLint            |
-| `npm run format`     | Formata o código com Prettier           |
+| Comando              | O que faz                                 |
+| -------------------- | ----------------------------------------- |
+| `npm start`          | Inicia o bot                              |
+| `npm run dev`        | Inicia com auto-reload (`node --watch`)   |
+| `npm run simulate`   | Testa os fluxos no terminal, sem WhatsApp |
+| `npm test`           | Roda os testes (Vitest)                   |
+| `npm run test:watch` | Testes em modo watch                      |
+| `npm run lint`       | Verifica o código com ESLint              |
+| `npm run format`     | Formata o código com Prettier             |
 
 ---
 

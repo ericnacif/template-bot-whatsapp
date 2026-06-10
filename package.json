@@ -6,6 +6,7 @@
     "scripts": {
         "start": "node index.js",
         "dev": "node --watch index.js",
+        "simulate": "node scripts/simulate.js",
         "test": "vitest run",
         "test:watch": "vitest",
         "lint": "eslint .",
