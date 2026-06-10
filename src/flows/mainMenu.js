@@ -10,13 +10,13 @@ async function mainMenuFlow(message) {
     const userId = message.from;
     const body = message.body.trim();
 
-    const session = sessionStore.get(userId);
+    const session = await sessionStore.get(userId);
 
     // --- Palavras que reiniciam o fluxo ---
     const triggerWords = ['oi', 'olá', 'ola', 'opa', 'menu', 'início', 'inicio', 'start'];
     if (triggerWords.includes(body.toLowerCase())) {
         session.step = 'main_menu';
-        sessionStore.set(userId, session);
+        await sessionStore.set(userId, session);
         return message.reply(MESSAGES.mainMenu);
     }
 
@@ -38,17 +38,17 @@ async function handleMainMenu(message, session, userId) {
     switch (message.body.trim()) {
         case '1':
             session.step = 'submenu_info';
-            sessionStore.set(userId, session);
+            await sessionStore.set(userId, session);
             return message.reply(MESSAGES.infoMenu);
 
         case '2':
             session.step = 'idle';
-            sessionStore.set(userId, session);
+            await sessionStore.set(userId, session);
             return message.reply(MESSAGES.contactInfo);
 
         case '3':
             session.step = 'idle';
-            sessionStore.set(userId, session);
+            await sessionStore.set(userId, session);
             return message.reply(MESSAGES.farewell);
 
         default:
@@ -60,17 +60,17 @@ async function handleInfoSubmenu(message, session, userId) {
     switch (message.body.trim()) {
         case '1':
             session.step = 'idle';
-            sessionStore.set(userId, session);
+            await sessionStore.set(userId, session);
             return message.reply(MESSAGES.infoItem1);
 
         case '2':
             session.step = 'idle';
-            sessionStore.set(userId, session);
+            await sessionStore.set(userId, session);
             return message.reply(MESSAGES.infoItem2);
 
         case '0':
             session.step = 'main_menu';
-            sessionStore.set(userId, session);
+            await sessionStore.set(userId, session);
             return message.reply(MESSAGES.mainMenu);
 
         default:

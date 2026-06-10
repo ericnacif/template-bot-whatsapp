@@ -10,6 +10,9 @@ function intFromEnv(name, fallback) {
 const config = {
     session: {
         ttlMs: intFromEnv('SESSION_TTL_MINUTES', 30) * 60 * 1000,
+        // 'memory' (padrão) ou 'redis'
+        driver: (process.env.SESSION_DRIVER || 'memory').toLowerCase(),
+        redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
     },
     rateLimit: {
         windowMs: intFromEnv('RATE_LIMIT_WINDOW_SECONDS', 10) * 1000,

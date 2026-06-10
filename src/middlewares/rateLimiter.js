@@ -30,6 +30,22 @@ class RateLimiter {
 
         return recent.length <= this.maxMessages;
     }
+
+    /**
+     * Remove registros de usuários sem atividade recente, evitando que o Map
+     * cresça indefinidamente com quem parou de enviar mensagens.
+     */
+    sweep() {
+        const windowStart = Date.now() - this.windowMs;
+        for (const [userId, timestamps] of this.hits) {
+            const recent = timestamps.filter((ts) => ts > windowStart);
+            if (recent.length === 0) {
+                this.hits.delete(userId);
+            } else {
+                this.hits.set(userId, recent);
+            }
+        }
+    }
 }
 
 const rateLimiter = new RateLimiter();

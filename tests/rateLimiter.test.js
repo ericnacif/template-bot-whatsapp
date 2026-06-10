@@ -21,4 +21,13 @@ describe('RateLimiter', () => {
         expect(limiter.allow('u2')).toBe(true);
         expect(limiter.allow('u1')).toBe(false);
     });
+
+    it('sweep remove usuários sem atividade recente', () => {
+        const limiter = new RateLimiter({ windowMs: -1, maxMessages: 5 });
+        limiter.allow('u1');
+        expect(limiter.hits.has('u1')).toBe(true);
+        // Com janela negativa, todo registro é considerado antigo.
+        limiter.sweep();
+        expect(limiter.hits.has('u1')).toBe(false);
+    });
 });

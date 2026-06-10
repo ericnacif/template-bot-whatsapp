@@ -60,6 +60,18 @@ class InMemorySessionStore {
     }
 }
 
-const sessionStore = new InMemorySessionStore();
+/**
+ * Cria o store de sessão conforme a configuração (SESSION_DRIVER).
+ * 'redis' carrega o driver Redis; qualquer outro valor usa memória.
+ */
+function createSessionStore() {
+    if (config.session.driver === 'redis') {
+        const { RedisSessionStore } = require('./redisSessionStore');
+        return new RedisSessionStore();
+    }
+    return new InMemorySessionStore();
+}
 
-module.exports = { sessionStore, InMemorySessionStore };
+const sessionStore = createSessionStore();
+
+module.exports = { sessionStore, createSessionStore, InMemorySessionStore };

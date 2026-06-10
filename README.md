@@ -80,15 +80,17 @@ cp .env.example .env
 
 Edite o `.env` com suas configurações. As variáveis disponíveis:
 
-| Variável                    | Padrão | Descrição                                   |
-| --------------------------- | ------ | ------------------------------------------- |
-| `SESSION_TTL_MINUTES`       | `30`   | Tempo de vida da sessão de conversa         |
-| `RATE_LIMIT_WINDOW_SECONDS` | `10`   | Janela do rate limit                        |
-| `RATE_LIMIT_MAX_MESSAGES`   | `5`    | Máximo de mensagens por janela              |
-| `LOG_LEVEL`                 | `info` | Nível de log: `error`/`warn`/`info`/`debug` |
-| `OPENAI_API_KEY`            | —      | Chave da OpenAI (opcional)                  |
-| `GEMINI_API_KEY`            | —      | Chave do Gemini (opcional)                  |
-| `ANTHROPIC_API_KEY`         | —      | Chave da Anthropic/Claude (opcional)        |
+| Variável                    | Padrão   | Descrição                                    |
+| --------------------------- | -------- | -------------------------------------------- |
+| `SESSION_TTL_MINUTES`       | `30`     | Tempo de vida da sessão de conversa          |
+| `SESSION_DRIVER`            | `memory` | Onde guardar sessões: `memory` ou `redis`    |
+| `REDIS_URL`                 | —        | URL do Redis (quando `SESSION_DRIVER=redis`) |
+| `RATE_LIMIT_WINDOW_SECONDS` | `10`     | Janela do rate limit                         |
+| `RATE_LIMIT_MAX_MESSAGES`   | `5`      | Máximo de mensagens por janela               |
+| `LOG_LEVEL`                 | `info`   | Nível de log: `error`/`warn`/`info`/`debug`  |
+| `OPENAI_API_KEY`            | —        | Chave da OpenAI (opcional)                   |
+| `GEMINI_API_KEY`            | —        | Chave do Gemini (opcional)                   |
+| `ANTHROPIC_API_KEY`         | —        | Chave da Anthropic/Claude (opcional)         |
 
 ### 4. Inicie o bot
 
@@ -225,6 +227,33 @@ Depois registre no `router.js` como qualquer outro fluxo.
 
 ---
 
+## 💾 Persistência de sessão
+
+Por padrão as sessões ficam em memória (`SESSION_DRIVER=memory`) e expiram pelo
+`SESSION_TTL_MINUTES`. Para sobreviver a reinícios e rodar com múltiplas instâncias,
+use Redis:
+
+```bash
+SESSION_DRIVER=redis
+REDIS_URL=redis://127.0.0.1:6379
+```
+
+Os dois drivers usam a mesma interface (`get`/`set`/`reset`), então os fluxos não mudam.
+
+---
+
+## 🐳 Docker
+
+```bash
+docker build -t template-bot-whatsapp .
+docker run -it --rm -v "$(pwd)/.wwebjs_auth:/app/.wwebjs_auth" template-bot-whatsapp
+```
+
+O `Dockerfile` já instala o Chromium e as dependências de sistema do `whatsapp-web.js`.
+O volume preserva a sessão autenticada entre execuções.
+
+---
+
 ## 🧪 Scripts
 
 | Comando              | O que faz                               |
@@ -245,6 +274,7 @@ Depois registre no `router.js` como qualquer outro fluxo.
 | [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) | ^1.34.6 | Interface não-oficial para WhatsApp Web |
 | [qrcode-terminal](https://github.com/gtanner/qrcode-terminal)     | ^0.12.0 | Exibe QR Code no terminal               |
 | [dotenv](https://github.com/motdotla/dotenv)                      | ^16.4.7 | Carrega variáveis de ambiente do `.env` |
+| [redis](https://github.com/redis/node-redis)                      | ^4.7.0  | Persistência de sessão (driver Redis)   |
 
 ---
 

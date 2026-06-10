@@ -10,6 +10,8 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
+        // Em containers, aponte para o Chromium do sistema via PUPPETEER_EXECUTABLE_PATH.
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
 });
@@ -82,8 +84,33 @@ client.on('message', async (message) => {
     await processMessage(message);
 });
 
-// Limpa sessões expiradas periodicamente para evitar vazamento de memória.
-const sweepInterval = setInterval(() => sessionStore.sweep(), 5 * 60 * 1000);
+// Limpa periodicamente sessões e registros antigos para evitar vazamento de memória.
+const sweepInterval = setInterval(
+    () => {
+        sessionStore.sweep();
+        rateLimiter.sweep();
+    },
+    5 * 60 * 1000,
+);
 sweepInterval.unref?.();
+
+let shuttingDown = false;
+async function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logWarn('shutting_down', { signal });
+    clearInterval(sweepInterval);
+    try {
+        await client.destroy();
+        await sessionStore.disconnect?.();
+    } catch (error) {
+        logError('shutdown_failed', { error: error.message });
+    } finally {
+        process.exit(0);
+    }
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 client.initialize();
