@@ -27,6 +27,9 @@ function enumFromEnv(name, fallback, allowed) {
 }
 
 const config = {
+    bot: {
+        flowFile: process.env.BOT_FLOW_FILE || 'config/flows/default.json',
+    },
     session: {
         ttlMs: intFromEnv('SESSION_TTL_MINUTES', 30) * 60 * 1000,
         // 'memory' (padrão) ou 'redis'
@@ -41,6 +44,18 @@ const config = {
         level: enumFromEnv('LOG_LEVEL', 'info', ['error', 'warn', 'info', 'debug']),
         includeMessageBody: boolFromEnv('LOG_MESSAGE_BODY', false),
         hashSecret: process.env.LOG_HASH_SECRET || '',
+    },
+    leads: {
+        driver: enumFromEnv('LEAD_STORE_DRIVER', 'file', ['file', 'memory']),
+        filePath: process.env.LEAD_STORE_PATH || 'data/leads.ndjson',
+    },
+    health: {
+        enabled: boolFromEnv('HEALTH_ENABLED', true),
+        port: intFromEnv('HEALTH_PORT', 3000, { min: 0 }),
+    },
+    reconnect: {
+        initialDelayMs: intFromEnv('RECONNECT_INITIAL_SECONDS', 5) * 1000,
+        maxDelayMs: intFromEnv('RECONNECT_MAX_SECONDS', 60) * 1000,
     },
     ai: {
         openaiApiKey: process.env.OPENAI_API_KEY || '',

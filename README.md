@@ -8,12 +8,15 @@
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
 </p>
 
+![Demonstração do fluxo de pousada](docs/demo-pousada.gif)
+
 ---
 
 ## ✨ Por que usar este template?
 
 - ✅ **Sessão salva** — faça o login via QR Code apenas uma vez
 - ✅ **Sistema de fluxos e menus** — navegação por números e palavras-chave
+- ✅ **Fluxos configuráveis por JSON** — personalize o atendimento sem alterar o motor
 - ✅ **Sessões por usuário** — cada pessoa tem seu próprio estado de conversa
 - ✅ **Textos centralizados** — edite todas as mensagens em um único arquivo
 - ✅ **Estrutura modular** — fácil de escalar e adicionar novas funcionalidades
@@ -21,8 +24,11 @@
 - ✅ **Sessões com TTL** — estado expira automaticamente e é trocável por Redis
 - ✅ **Rate limiting** — proteção básica contra flood por usuário
 - ✅ **Fila por usuário** — mensagens do mesmo contato são processadas na ordem correta
+- ✅ **Captura de leads** — armazenamento local estruturado para demonstrações
+- ✅ **Atendimento humano** — pausa automática do bot durante o handoff
+- ✅ **Saúde e reconexão** — endpoints de liveness/readiness e retry progressivo
 - ✅ **Logs estruturados e privados** — identificadores anônimos e corpo oculto por padrão
-- ✅ **Testes com Vitest + ESLint/Prettier** — qualidade desde o início
+- ✅ **Cobertura automatizada** — Vitest, ESLint, Prettier e limites na CI
 - ✅ **Guia de integração com IA** — exemplos para OpenAI, Gemini ou Claude
 
 ## 📌 Status do projeto
@@ -40,8 +46,13 @@ template-bot-whatsapp/
 ├── src/
 │   ├── flows/
 │   │   ├── router.js         # Roteador central — toda mensagem passa por aqui
-│   │   ├── mainMenu.js       # Fluxo do menu principal com sessões por usuário
+│   │   ├── mainMenu.js       # Carrega o fluxo configurado
+│   │   ├── configurableFlow.js # Motor declarativo de atendimento
 │   │   └── iaFlow.js         # Guia para plugar IA (OpenAI/Gemini/Claude)
+│   ├── config/
+│   │   └── flowLoader.js     # Leitura e validação dos fluxos JSON
+│   ├── health/
+│   │   └── server.js         # Endpoints /health e /ready
 │   ├── commands/
 │   │   ├── index.js          # Registro de comandos (keyword → handler)
 │   │   └── ping.js           # Exemplo de comando por palavra-chave
@@ -53,8 +64,13 @@ template-bot-whatsapp/
 │   │   ├── sessionStore.js   # Sessões em memória com TTL
 │   │   ├── redisSessionStore.js # Implementação opcional com Redis
 │   │   ├── keyedQueue.js     # Fila independente por usuário
+│   │   ├── leadStore.js      # Persistência de leads
+│   │   ├── inputValidators.js # Validadores reutilizáveis
 │   │   └── messageFilter.js  # Filtro de origens e mensagens ignoradas
 │   └── config.js             # Configuração lida do .env
+├── config/flows/             # Fluxo padrão em JSON
+├── examples/pousada/         # Caso demonstrativo completo
+├── docs/                     # Case, GIF, imagem e vídeo de demonstração
 ├── tests/                    # Testes (Vitest)
 ├── index.js                  # Ponto de entrada — inicializa o cliente
 ├── .env.example              # Variáveis de ambiente de exemplo
@@ -90,19 +106,26 @@ cp .env.example .env
 
 Edite o `.env` com suas configurações. As variáveis disponíveis:
 
-| Variável                    | Padrão   | Descrição                                     |
-| --------------------------- | -------- | --------------------------------------------- |
-| `SESSION_TTL_MINUTES`       | `30`     | Tempo de vida da sessão de conversa           |
-| `SESSION_DRIVER`            | `memory` | Onde guardar sessões: `memory` ou `redis`     |
-| `REDIS_URL`                 | —        | URL do Redis (quando `SESSION_DRIVER=redis`)  |
-| `RATE_LIMIT_WINDOW_SECONDS` | `10`     | Janela do rate limit                          |
-| `RATE_LIMIT_MAX_MESSAGES`   | `5`      | Máximo de mensagens por janela                |
-| `LOG_LEVEL`                 | `info`   | Nível de log: `error`/`warn`/`info`/`debug`   |
-| `LOG_MESSAGE_BODY`          | `false`  | Inclui o texto recebido nos logs              |
-| `LOG_HASH_SECRET`           | —        | Mantém o hash anônimo estável entre reinícios |
-| `OPENAI_API_KEY`            | —        | Chave da OpenAI (opcional)                    |
-| `GEMINI_API_KEY`            | —        | Chave do Gemini (opcional)                    |
-| `ANTHROPIC_API_KEY`         | —        | Chave da Anthropic/Claude (opcional)          |
+| Variável                    | Padrão                      | Descrição                                     |
+| --------------------------- | --------------------------- | --------------------------------------------- |
+| `BOT_FLOW_FILE`             | `config/flows/default.json` | Fluxo JSON ativo                              |
+| `SESSION_TTL_MINUTES`       | `30`                        | Tempo de vida da sessão de conversa           |
+| `SESSION_DRIVER`            | `memory`                    | Onde guardar sessões: `memory` ou `redis`     |
+| `REDIS_URL`                 | —                           | URL do Redis (quando `SESSION_DRIVER=redis`)  |
+| `RATE_LIMIT_WINDOW_SECONDS` | `10`                        | Janela do rate limit                          |
+| `RATE_LIMIT_MAX_MESSAGES`   | `5`                         | Máximo de mensagens por janela                |
+| `LOG_LEVEL`                 | `info`                      | Nível de log: `error`/`warn`/`info`/`debug`   |
+| `LOG_MESSAGE_BODY`          | `false`                     | Inclui o texto recebido nos logs              |
+| `LOG_HASH_SECRET`           | —                           | Mantém o hash anônimo estável entre reinícios |
+| `LEAD_STORE_DRIVER`         | `file`                      | Armazena leads em `file` ou `memory`          |
+| `LEAD_STORE_PATH`           | `data/leads.ndjson`         | Arquivo local de leads                        |
+| `HEALTH_ENABLED`            | `true`                      | Ativa os endpoints de saúde                   |
+| `HEALTH_PORT`               | `3000`                      | Porta do servidor de saúde                    |
+| `RECONNECT_INITIAL_SECONDS` | `5`                         | Espera inicial para reconexão                 |
+| `RECONNECT_MAX_SECONDS`     | `60`                        | Espera máxima entre tentativas                |
+| `OPENAI_API_KEY`            | —                           | Chave da OpenAI (opcional)                    |
+| `GEMINI_API_KEY`            | —                           | Chave do Gemini (opcional)                    |
+| `ANTHROPIC_API_KEY`         | —                           | Chave da Anthropic/Claude (opcional)          |
 
 ### 4. Inicie o bot
 
@@ -125,70 +148,60 @@ Quer validar os menus e comandos sem conectar um número? Use o simulador:
 
 ```bash
 npm run simulate
+npm run simulate:pousada
 ```
 
-Ele abre um chat no terminal usando o mesmo `router`/`mainMenu` de produção —
-digite `oi`, `1`, `ping` etc. e veja as respostas. Use `/sair` para encerrar.
+O segundo comando executa o caso fictício da **Pousada Serra Verde**, com captura de reserva e atendimento humano. Os dois usam o mesmo motor da aplicação real. Use `/sair` para encerrar.
+
+- [Assistir ao vídeo de 32 segundos](docs/demo-pousada.mp4)
+- [Ler o case completo](docs/portfolio-case.md)
 
 ---
 
 ## 💬 Como funciona o sistema de fluxos
 
-O bot funciona com um sistema de **sessões por usuário** + **roteamento por etapas**.
+O motor lê um arquivo JSON, mantém uma sessão por usuário e percorre os nodes definidos. Menus, perguntas, validações, captura de dados e handoff usam a mesma estrutura declarativa.
 
-### Palavras-chave (iniciam o atendimento)
-
-```
-oi / olá / opa / menu / início / start
-```
-
-### Navegação por menu
-
-```
-Usuário: oi
-Bot: Menu principal (opções 1, 2, 3)
-
-Usuário: 1
-Bot: Submenu de Informações (opções 1, 2, 0)
-
-Usuário: 0
-Bot: Volta ao menu principal
-```
-
-### Fluxo visual
-
-```
-[Usuário digita "oi"]
-        │
-        ▼
-  [Menu Principal]
-  1 - Informações
-  2 - Contato
-  3 - Encerrar
-        │
-    ┌───┴───┐
-    ▼       ▼
-[Submenu] [Contato]
+```mermaid
+flowchart TD
+    A[Mensagem recebida] --> B{Comando?}
+    B -->|Sim| C[Executa comando]
+    B -->|Não| D[Carrega sessão e node]
+    D --> E{Tipo do node}
+    E -->|Menu| F[Escolhe próximo node]
+    E -->|Input| G[Valida e salva campo]
+    E -->|Handoff| H[Pausa automação]
+    E -->|Lead| I[Persiste solicitação]
 ```
 
 ---
 
 ## 🛠️ Como personalizar
 
-### Alterar os textos do bot
+Copie `config/flows/default.json`, altere mensagens e transições e aponte `BOT_FLOW_FILE` para o novo arquivo.
 
-Edite o arquivo `src/utils/messages.js`. Todos os textos estão centralizados lá.
-
-```js
-const MESSAGES = {
-    mainMenu: `👋 Olá! Como posso ajudar?
-
-*1* - Produtos
-*2* - Suporte
-*3* - Encerrar`,
-    // ...
-};
+```json
+{
+    "id": "meu-negocio",
+    "initialStep": "menu",
+    "triggerWords": ["oi", "menu"],
+    "nodes": {
+        "menu": {
+            "type": "menu",
+            "message": "Como posso ajudar?",
+            "options": {
+                "1": { "next": "contato" }
+            }
+        },
+        "contato": {
+            "type": "message",
+            "message": "Nosso contato é contato@exemplo.com"
+        }
+    }
+}
 ```
+
+Tipos disponíveis: `menu`, `input`, `message`, `handoff` e `save_lead`. Inputs aceitam os validadores `non_empty`, `positive_integer`, `date_br` e `date_after:campo`; mensagens podem usar variáveis como `{{lead.name}}`.
 
 ### Adicionar um novo comando por palavra-chave
 
@@ -214,15 +227,11 @@ const commands = {
 
 O roteador resolve o comando automaticamente — você não precisa tocar no `router.js`.
 
-### Adicionar uma nova opção no menu
+## 🙋 Atendimento humano e leads
 
-Em `src/flows/mainMenu.js`, adicione um novo `case` no switch correspondente:
+O node `handoff` pausa respostas automáticas pelo período configurado. A palavra `menu` reativa o bot antes do prazo. O node `save_lead` registra os campos coletados em `data/leads.ndjson`; para testes, use `LEAD_STORE_DRIVER=memory`.
 
-```js
-case '4':
-    session.step = 'idle';
-    return message.reply(MESSAGES.minhaNovaOpcao);
-```
+O arquivo de leads contém dados pessoais. Defina acesso, retenção e consentimento adequados antes de usar o recurso fora de uma demonstração.
 
 ---
 
@@ -267,31 +276,42 @@ Os dois drivers usam a mesma interface (`get`/`set`/`reset`), então os fluxos n
 
 ---
 
+## 🩺 Saúde e reconexão
+
+- `GET /health` confirma que o processo está em execução.
+- `GET /ready` retorna `200` apenas quando o cliente do WhatsApp está conectado.
+- Após uma desconexão, o cliente tenta se conectar novamente com espera progressiva até o limite configurado.
+
+O healthcheck do contêiner usa o endpoint de liveness. Orquestradores e balanceadores devem usar `/ready` para decidir quando enviar tráfego.
+
+---
+
 ## 🐳 Docker
 
 ```bash
-docker build -t template-bot-whatsapp .
-docker run -it --rm -v "$(pwd)/.wwebjs_auth:/app/.wwebjs_auth" template-bot-whatsapp
+cp .env.example .env
+docker compose up --build
 ```
 
-O `Dockerfile` já instala o Chromium e as dependências de sistema do `whatsapp-web.js`.
-O volume preserva a sessão autenticada entre execuções.
+O Compose inicia o bot e o Redis, preserva autenticação, leads e sessões em volumes e publica os endpoints de saúde na porta `3000`. Na primeira execução, escaneie o QR Code exibido no terminal.
 
 ---
 
 ## 🧪 Scripts
 
-| Comando              | O que faz                                 |
-| -------------------- | ----------------------------------------- |
-| `npm start`          | Inicia o bot                              |
-| `npm run dev`        | Inicia com auto-reload (`node --watch`)   |
-| `npm run simulate`   | Testa os fluxos no terminal, sem WhatsApp |
-| `npm test`           | Roda os testes (Vitest)                   |
-| `npm run test:watch` | Testes em modo watch                      |
-| `npm run lint`       | Verifica o código com ESLint              |
-| `npm run check`      | Executa lint, formatação e testes         |
-| `npm run audit`      | Audita dependências de produção           |
-| `npm run format`     | Formata o código com Prettier             |
+| Comando                    | O que faz                                      |
+| -------------------------- | ---------------------------------------------- |
+| `npm start`                | Inicia o bot                                   |
+| `npm run dev`              | Inicia com auto-reload (`node --watch`)        |
+| `npm run simulate`         | Testa o fluxo padrão sem WhatsApp              |
+| `npm run simulate:pousada` | Executa o case completo da pousada             |
+| `npm test`                 | Roda os testes (Vitest)                        |
+| `npm run test:coverage`    | Roda testes e verifica os limites de cobertura |
+| `npm run test:watch`       | Testes em modo watch                           |
+| `npm run lint`             | Verifica o código com ESLint                   |
+| `npm run check`            | Executa lint, formatação e testes              |
+| `npm run audit`            | Audita dependências de produção                |
+| `npm run format`           | Formata o código com Prettier                  |
 
 ---
 
@@ -301,7 +321,7 @@ O volume preserva a sessão autenticada entre execuções.
 | ----------------------------------------------------------------- | ------- | --------------------------------------- |
 | [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) | ^1.34.7 | Interface não oficial para WhatsApp Web |
 | [qrcode-terminal](https://github.com/gtanner/qrcode-terminal)     | ^0.12.0 | Exibe QR Code no terminal               |
-| [dotenv](https://github.com/motdotla/dotenv)                      | ^16.4.7 | Carrega variáveis de ambiente do `.env` |
+| [dotenv](https://github.com/motdotla/dotenv)                      | ^16.6.1 | Carrega variáveis de ambiente do `.env` |
 | [redis](https://github.com/redis/node-redis)                      | ^4.7.0  | Persistência de sessão (driver Redis)   |
 
 ---
@@ -312,7 +332,20 @@ O volume preserva a sessão autenticada entre execuções.
 - Não utilize o projeto para spam ou ações contrárias aos [Termos de Serviço do WhatsApp](https://www.whatsapp.com/legal/terms-of-service).
 - O corpo das mensagens não é registrado por padrão. Ative `LOG_MESSAGE_BODY` somente com uma finalidade e política de retenção definidas.
 - Em múltiplas instâncias, use Redis para o estado da conversa. A autenticação `LocalAuth` continua dependente de armazenamento persistente e requer uma estratégia operacional própria.
+- Leads podem conter dados pessoais. Defina consentimento, controle de acesso, retenção e descarte antes de colocar o armazenamento em produção.
 - Consulte [SECURITY.md](SECURITY.md) para relatar vulnerabilidades.
+
+---
+
+## 🗺️ Roadmap em duas etapas
+
+### Etapa 1 — portfólio (v1.2.0)
+
+Fluxos JSON, case de pousada, captura de leads, handoff humano, Docker Compose com Redis, saúde, reconexão, cobertura automatizada e materiais visuais demonstrativos.
+
+### Etapa 2 — produto comercial
+
+Migração para a API oficial do WhatsApp Cloud, banco de dados gerenciado, painel administrativo, autenticação e permissões, integração real com IA, métricas/alertas, políticas LGPD e arquitetura multiempresa. Esses itens são roadmap e ainda não fazem parte desta versão.
 
 ---
 

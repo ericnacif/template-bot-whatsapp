@@ -1,0 +1,45 @@
+{
+    "id": "default",
+    "name": "Fluxo padrão",
+    "initialStep": "main_menu",
+    "triggerWords": ["oi", "olá", "ola", "opa", "menu", "início", "inicio", "start"],
+    "messages": {
+        "noContext": "👋 Olá! Para começar, digite *oi* ou *menu*."
+    },
+    "nodes": {
+        "main_menu": {
+            "type": "menu",
+            "message": "👋 Olá! Bem-vindo(a)!\n\nComo posso te ajudar hoje?\n\n*1* - 📋 Informações\n*2* - 📞 Contato\n*3* - 👋 Encerrar atendimento\n\n_Digite o número da opção desejada._",
+            "options": {
+                "1": { "next": "submenu_info" },
+                "2": { "next": "contact_info" },
+                "3": { "next": "farewell" }
+            }
+        },
+        "submenu_info": {
+            "type": "menu",
+            "message": "📋 *Informações*\n\nEscolha o que deseja saber:\n\n*1* - 🕐 Horário de funcionamento\n*2* - 📍 Como nos encontrar\n\n*0* - ↩️ Voltar ao menu principal",
+            "options": {
+                "1": { "next": "opening_hours" },
+                "2": { "next": "location" },
+                "0": { "next": "main_menu" }
+            }
+        },
+        "contact_info": {
+            "type": "message",
+            "message": "📞 *Contato*\n\nVocê pode nos chamar por aqui mesmo ou acessar nossos canais:\n\n🌐 Site: https://seusite.com.br\n📧 Email: contato@seusite.com.br\n📸 Instagram: @seuinsta\n\n_Retorne ao menu digitando *menu*._"
+        },
+        "opening_hours": {
+            "type": "message",
+            "message": "🕐 *Horário de Funcionamento*\n\nSegunda a Sexta: 08h às 18h\nSábado: 09h às 13h\nDomingo: Fechado\n\n_Retorne ao menu digitando *menu*._"
+        },
+        "location": {
+            "type": "message",
+            "message": "📍 *Como nos Encontrar*\n\nRua Exemplo, 123 - Bairro - Cidade/UF\n\n📌 Google Maps: https://maps.google.com\n\n_Retorne ao menu digitando *menu*._"
+        },
+        "farewell": {
+            "type": "message",
+            "message": "👋 *Até logo!*\n\nFoi um prazer te atender. Se precisar de algo, é só chamar!\n\n_Digite *oi* a qualquer momento para começar novamente._"
+        }
+    }
+}
