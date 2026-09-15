@@ -4,7 +4,11 @@ const { handleMessage } = require('./src/flows/router');
 const { rateLimiter } = require('./src/middlewares/rateLimiter');
 const { sessionStore } = require('./src/utils/sessionStore');
 const { MESSAGES } = require('./src/utils/messages');
-const { logInfo, logWarn, logError } = require('./src/middlewares/logger');
+const { KeyedQueue } = require('./src/utils/keyedQueue');
+const { shouldIgnore } = require('./src/utils/messageFilter');
+const { logInfo, logWarn, logError, anonymizeUserId } = require('./src/middlewares/logger');
+
+const messageQueue = new KeyedQueue();
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -35,27 +39,11 @@ client.on('disconnected', (reason) => {
     logWarn('client_disconnected', { reason });
 });
 
-function isPrivateChat(from) {
-    // Aceita @c.us (formato antigo) e @lid (formato novo do WhatsApp)
-    return from.endsWith('@c.us') || from.endsWith('@lid');
-}
-
-function shouldIgnore(message) {
-    if (message.from.endsWith('@g.us')) return true; // grupos
-    if (message.from === 'status@broadcast') return true;
-    if (message.isStatus) return true;
-    if (message.broadcast) return true;
-    if (!isPrivateChat(message.from)) return true;
-    if (!message.body || message.body.trim() === '') return true;
-    if (message.fromMe) return true;
-    return false;
-}
-
 async function processMessage(message) {
     if (shouldIgnore(message)) return;
 
     if (!rateLimiter.allow(message.from)) {
-        logWarn('rate_limited', { from: message.from });
+        logWarn('rate_limited', { userHash: anonymizeUserId(message.from) });
         try {
             await message.reply(MESSAGES.rateLimited);
         } catch (_) {
@@ -68,7 +56,7 @@ async function processMessage(message) {
         await handleMessage(client, message);
     } catch (error) {
         logError('message_processing_failed', {
-            from: message.from,
+            userHash: anonymizeUserId(message.from),
             error: error.message,
             stack: error.stack,
         });
@@ -80,8 +68,15 @@ async function processMessage(message) {
     }
 }
 
-client.on('message', async (message) => {
-    await processMessage(message);
+client.on('message', (message) => {
+    messageQueue
+        .enqueue(message.from, () => processMessage(message))
+        .catch((error) => {
+            logError('message_queue_failed', {
+                userHash: anonymizeUserId(message.from),
+                error: error.message,
+            });
+        });
 });
 
 // Limpa periodicamente sessões e registros antigos para evitar vazamento de memória.

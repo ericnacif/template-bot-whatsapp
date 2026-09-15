@@ -1,6 +1,6 @@
 # 🤖 WhatsApp Bot Boilerplate — Node.js
 
-> Template profissional e pronto para produção para criar agentes de WhatsApp com fluxos de atendimento, menus interativos e integração com IA.
+> Boilerplate open source para criar bots de WhatsApp com fluxos de atendimento, sessões, Redis, testes e estrutura preparada para integração com IA.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" />
@@ -18,11 +18,18 @@
 - ✅ **Textos centralizados** — edite todas as mensagens em um único arquivo
 - ✅ **Estrutura modular** — fácil de escalar e adicionar novas funcionalidades
 - ✅ **Registro de comandos** — adicione comandos sem mexer no roteador
-- ✅ **Sessões com TTL** — estado expira automaticamente e é trocável por Redis/DB
+- ✅ **Sessões com TTL** — estado expira automaticamente e é trocável por Redis
 - ✅ **Rate limiting** — proteção básica contra flood por usuário
-- ✅ **Logs estruturados** — saída em JSON pronta para observabilidade
+- ✅ **Fila por usuário** — mensagens do mesmo contato são processadas na ordem correta
+- ✅ **Logs estruturados e privados** — identificadores anônimos e corpo oculto por padrão
 - ✅ **Testes com Vitest + ESLint/Prettier** — qualidade desde o início
-- ✅ **Pronto para IA** — estrutura preparada para plugar OpenAI, Gemini ou Claude
+- ✅ **Guia de integração com IA** — exemplos para OpenAI, Gemini ou Claude
+
+## 📌 Status do projeto
+
+Este repositório é um ponto de partida funcional para estudos, protótipos e automações controladas. Ele não inclui uma integração de IA ativa e usa `whatsapp-web.js`, uma solução não oficial baseada no WhatsApp Web.
+
+Para operações comerciais críticas, avalie a API oficial do WhatsApp Business e os requisitos de disponibilidade, privacidade e suporte do projeto.
 
 ---
 
@@ -43,7 +50,10 @@ template-bot-whatsapp/
 │   │   └── rateLimiter.js    # Rate limiting por usuário
 │   ├── utils/
 │   │   ├── messages.js       # ⭐ Todos os textos do bot em um só lugar
-│   │   └── sessionStore.js   # Sessões em memória com TTL (trocável por Redis/DB)
+│   │   ├── sessionStore.js   # Sessões em memória com TTL
+│   │   ├── redisSessionStore.js # Implementação opcional com Redis
+│   │   ├── keyedQueue.js     # Fila independente por usuário
+│   │   └── messageFilter.js  # Filtro de origens e mensagens ignoradas
 │   └── config.js             # Configuração lida do .env
 ├── tests/                    # Testes (Vitest)
 ├── index.js                  # Ponto de entrada — inicializa o cliente
@@ -80,22 +90,24 @@ cp .env.example .env
 
 Edite o `.env` com suas configurações. As variáveis disponíveis:
 
-| Variável                    | Padrão   | Descrição                                    |
-| --------------------------- | -------- | -------------------------------------------- |
-| `SESSION_TTL_MINUTES`       | `30`     | Tempo de vida da sessão de conversa          |
-| `SESSION_DRIVER`            | `memory` | Onde guardar sessões: `memory` ou `redis`    |
-| `REDIS_URL`                 | —        | URL do Redis (quando `SESSION_DRIVER=redis`) |
-| `RATE_LIMIT_WINDOW_SECONDS` | `10`     | Janela do rate limit                         |
-| `RATE_LIMIT_MAX_MESSAGES`   | `5`      | Máximo de mensagens por janela               |
-| `LOG_LEVEL`                 | `info`   | Nível de log: `error`/`warn`/`info`/`debug`  |
-| `OPENAI_API_KEY`            | —        | Chave da OpenAI (opcional)                   |
-| `GEMINI_API_KEY`            | —        | Chave do Gemini (opcional)                   |
-| `ANTHROPIC_API_KEY`         | —        | Chave da Anthropic/Claude (opcional)         |
+| Variável                    | Padrão   | Descrição                                     |
+| --------------------------- | -------- | --------------------------------------------- |
+| `SESSION_TTL_MINUTES`       | `30`     | Tempo de vida da sessão de conversa           |
+| `SESSION_DRIVER`            | `memory` | Onde guardar sessões: `memory` ou `redis`     |
+| `REDIS_URL`                 | —        | URL do Redis (quando `SESSION_DRIVER=redis`)  |
+| `RATE_LIMIT_WINDOW_SECONDS` | `10`     | Janela do rate limit                          |
+| `RATE_LIMIT_MAX_MESSAGES`   | `5`      | Máximo de mensagens por janela                |
+| `LOG_LEVEL`                 | `info`   | Nível de log: `error`/`warn`/`info`/`debug`   |
+| `LOG_MESSAGE_BODY`          | `false`  | Inclui o texto recebido nos logs              |
+| `LOG_HASH_SECRET`           | —        | Mantém o hash anônimo estável entre reinícios |
+| `OPENAI_API_KEY`            | —        | Chave da OpenAI (opcional)                    |
+| `GEMINI_API_KEY`            | —        | Chave do Gemini (opcional)                    |
+| `ANTHROPIC_API_KEY`         | —        | Chave da Anthropic/Claude (opcional)          |
 
 ### 4. Inicie o bot
 
 ```bash
-npm start       # produção
+npm start       # inicia o bot
 npm run dev     # com auto-reload (node --watch)
 ```
 
@@ -214,9 +226,9 @@ case '4':
 
 ---
 
-## 🤖 Integrando com IA (OpenAI / Gemini / Claude)
+## 🤖 Preparando uma integração com IA
 
-A estrutura está preparada para isso. Instale o SDK desejado e chame dentro de um fluxo:
+A IA não vem ativa. O arquivo `src/flows/iaFlow.js` contém exemplos comentados; escolha um provedor, instale o SDK e implemente limites, histórico e tratamento de erros conforme o seu caso.
 
 ```bash
 npm install openai
@@ -277,6 +289,8 @@ O volume preserva a sessão autenticada entre execuções.
 | `npm test`           | Roda os testes (Vitest)                   |
 | `npm run test:watch` | Testes em modo watch                      |
 | `npm run lint`       | Verifica o código com ESLint              |
+| `npm run check`      | Executa lint, formatação e testes         |
+| `npm run audit`      | Audita dependências de produção           |
 | `npm run format`     | Formata o código com Prettier             |
 
 ---
@@ -285,16 +299,20 @@ O volume preserva a sessão autenticada entre execuções.
 
 | Pacote                                                            | Versão  | Descrição                               |
 | ----------------------------------------------------------------- | ------- | --------------------------------------- |
-| [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) | ^1.34.6 | Interface não-oficial para WhatsApp Web |
+| [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js) | ^1.34.7 | Interface não oficial para WhatsApp Web |
 | [qrcode-terminal](https://github.com/gtanner/qrcode-terminal)     | ^0.12.0 | Exibe QR Code no terminal               |
 | [dotenv](https://github.com/motdotla/dotenv)                      | ^16.4.7 | Carrega variáveis de ambiente do `.env` |
 | [redis](https://github.com/redis/node-redis)                      | ^4.7.0  | Persistência de sessão (driver Redis)   |
 
 ---
 
-## ⚠️ Aviso
+## ⚠️ Limitações e segurança
 
-Este projeto utiliza automação unofficial do WhatsApp. Use com responsabilidade e de acordo com os [Termos de Serviço do WhatsApp](https://www.whatsapp.com/legal/terms-of-service). Não utilize para spam.
+- A integração usa automação não oficial do WhatsApp Web e pode ser afetada por mudanças na plataforma.
+- Não utilize o projeto para spam ou ações contrárias aos [Termos de Serviço do WhatsApp](https://www.whatsapp.com/legal/terms-of-service).
+- O corpo das mensagens não é registrado por padrão. Ative `LOG_MESSAGE_BODY` somente com uma finalidade e política de retenção definidas.
+- Em múltiplas instâncias, use Redis para o estado da conversa. A autenticação `LocalAuth` continua dependente de armazenamento persistente e requer uma estratégia operacional própria.
+- Consulte [SECURITY.md](SECURITY.md) para relatar vulnerabilidades.
 
 ---
 
