@@ -7,8 +7,11 @@ const { MESSAGES } = require('./src/utils/messages');
 const { KeyedQueue } = require('./src/utils/keyedQueue');
 const { shouldIgnore } = require('./src/utils/messageFilter');
 const { logInfo, logWarn, logError, anonymizeUserId } = require('./src/middlewares/logger');
+const { config } = require('./src/config');
+const { startHealthServer, closeHealthServer } = require('./src/health/server');
 
 const messageQueue = new KeyedQueue();
+let whatsappReady = false;
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -26,18 +29,29 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
+    whatsappReady = true;
+    reconnectDelay = config.reconnect.initialDelayMs;
     logInfo('client_ready');
     console.log('✅ Bot conectado e pronto para atender!');
 });
 
 client.on('auth_failure', () => {
+    whatsappReady = false;
     logError('auth_failure');
     console.error('❌ Falha na autenticação. Delete a pasta .wwebjs_auth e tente novamente.');
 });
 
 client.on('disconnected', (reason) => {
+    whatsappReady = false;
     logWarn('client_disconnected', { reason });
+    scheduleReconnect();
 });
+
+const healthServer = config.health.enabled
+    ? startHealthServer({
+          getStatus: () => ({ ready: whatsappReady, queueSize: messageQueue.size() }),
+      })
+    : null;
 
 async function processMessage(message) {
     if (shouldIgnore(message)) return;
@@ -90,14 +104,47 @@ const sweepInterval = setInterval(
 sweepInterval.unref?.();
 
 let shuttingDown = false;
+let initializing = false;
+let reconnectTimer = null;
+let reconnectDelay = config.reconnect.initialDelayMs;
+
+async function initializeClient() {
+    if (initializing || shuttingDown) return;
+    initializing = true;
+
+    try {
+        await client.initialize();
+    } catch (error) {
+        logError('client_initialize_failed', { error: error.message });
+        scheduleReconnect();
+    } finally {
+        initializing = false;
+    }
+}
+
+function scheduleReconnect() {
+    if (shuttingDown || reconnectTimer) return;
+    const delayMs = reconnectDelay;
+    logWarn('client_reconnect_scheduled', { delayMs });
+
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        initializeClient();
+    }, delayMs);
+    reconnectTimer.unref?.();
+    reconnectDelay = Math.min(reconnectDelay * 2, config.reconnect.maxDelayMs);
+}
+
 async function shutdown(signal) {
     if (shuttingDown) return;
     shuttingDown = true;
     logWarn('shutting_down', { signal });
     clearInterval(sweepInterval);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
     try {
         await client.destroy();
         await sessionStore.disconnect?.();
+        await closeHealthServer(healthServer);
     } catch (error) {
         logError('shutdown_failed', { error: error.message });
     } finally {
@@ -108,4 +155,4 @@ async function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-client.initialize();
+initializeClient();

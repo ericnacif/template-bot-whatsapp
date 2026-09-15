@@ -13,3 +13,5 @@ Para comunicar uma vulnerabilidade, use o recurso **Report a vulnerability** na 
 ## Escopo e dependências
 
 Este projeto depende de `whatsapp-web.js` e do Chromium/Puppeteer. Alertas transitivos sem correção compatível são acompanhados pelo Dependabot e devem ser avaliados antes de cada implantação.
+
+O armazenamento de leads é adequado apenas para demonstração local. Antes de uso comercial, implemente criptografia, autenticação e autorização, retenção e descarte, consentimento e atendimento aos direitos dos titulares conforme a legislação aplicável.

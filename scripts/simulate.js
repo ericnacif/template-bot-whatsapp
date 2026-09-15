@@ -11,6 +11,11 @@
 // Silencia os logs estruturados para a conversa ficar limpa no terminal.
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'error';
 
+const flowArgument = process.argv.find((argument) => argument.startsWith('--flow='));
+if (flowArgument) {
+    process.env.BOT_FLOW_FILE = flowArgument.slice('--flow='.length);
+}
+
 const readline = require('readline');
 const { handleMessage } = require('../src/flows/router');
 
@@ -36,6 +41,7 @@ function makeMessage(body) {
 }
 
 console.log('💬 Simulador do bot (sem WhatsApp). Digite "oi" para começar.');
+if (process.env.BOT_FLOW_FILE) console.log(`   Fluxo: ${process.env.BOT_FLOW_FILE}`);
 console.log('   Comandos do simulador: /sair para encerrar.\n');
 rl.prompt();
 

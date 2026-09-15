@@ -1,0 +1,88 @@
+{
+    "id": "pousada-serra-verde",
+    "name": "Pousada Serra Verde",
+    "initialStep": "main_menu",
+    "triggerWords": ["oi", "olá", "ola", "menu", "início", "inicio", "cancelar"],
+    "messages": {
+        "noContext": "Olá! Digite *menu* para iniciar o atendimento da pousada."
+    },
+    "handoff": {
+        "keywords": ["atendente", "humano", "falar com atendente"],
+        "node": "human_handoff",
+        "durationMinutes": 60
+    },
+    "nodes": {
+        "main_menu": {
+            "type": "menu",
+            "message": "🌿 *Pousada Serra Verde*\n\nOlá! Como podemos ajudar?\n\n*1* - Conhecer acomodações\n*2* - Solicitar uma reserva\n*3* - Localização e horários\n*4* - Falar com um atendente\n\n_Digite o número da opção._",
+            "options": {
+                "1": { "next": "rooms_menu" },
+                "2": { "next": "booking_name" },
+                "3": { "next": "location" },
+                "4": { "next": "human_handoff" }
+            }
+        },
+        "rooms_menu": {
+            "type": "menu",
+            "message": "🛏️ *Nossas acomodações*\n\n*1* - Chalé Casal\n*2* - Suíte Família\n*0* - Voltar ao menu\n\n_Valores e disponibilidade são demonstrativos._",
+            "options": {
+                "1": { "next": "room_couple" },
+                "2": { "next": "room_family" },
+                "0": { "next": "main_menu" }
+            }
+        },
+        "room_couple": {
+            "type": "message",
+            "message": "🏡 *Chalé Casal*\n\nCama queen, café da manhã, varanda e vista para a serra.\n\nDiárias demonstrativas a partir de *R$ 320*.\n\nDigite *menu* para continuar."
+        },
+        "room_family": {
+            "type": "message",
+            "message": "👨‍👩‍👧‍👦 *Suíte Família*\n\nAté quatro hóspedes, café da manhã e espaço integrado.\n\nDiárias demonstrativas a partir de *R$ 460*.\n\nDigite *menu* para continuar."
+        },
+        "location": {
+            "type": "message",
+            "message": "📍 *Localização e horários*\n\nRegião serrana de Minas Gerais.\nCheck-in: a partir das 14h\nCheck-out: até as 11h\n\nMapa demonstrativo: https://maps.google.com\n\nDigite *menu* para continuar."
+        },
+        "booking_name": {
+            "type": "input",
+            "field": "name",
+            "validator": "non_empty",
+            "message": "Perfeito! Para começar, qual é o seu *nome*?\n\n_Ao continuar, você autoriza o uso desses dados para responder à sua solicitação._",
+            "invalidMessage": "Digite um nome com pelo menos dois caracteres.",
+            "next": "booking_checkin"
+        },
+        "booking_checkin": {
+            "type": "input",
+            "field": "checkin",
+            "validator": "date_br",
+            "message": "Obrigado, {{lead.name}}! Qual é a data de *entrada*?\n\nUse o formato DD/MM/AAAA.",
+            "invalidMessage": "Não consegui reconhecer a data. Use o formato DD/MM/AAAA.",
+            "next": "booking_checkout"
+        },
+        "booking_checkout": {
+            "type": "input",
+            "field": "checkout",
+            "validator": "date_after:checkin",
+            "message": "E qual será a data de *saída*?\n\nUse o formato DD/MM/AAAA.",
+            "invalidMessage": "Informe uma data de saída posterior à entrada, no formato DD/MM/AAAA.",
+            "next": "booking_guests"
+        },
+        "booking_guests": {
+            "type": "input",
+            "field": "guests",
+            "validator": "positive_integer",
+            "message": "Para quantos hóspedes será a reserva?",
+            "invalidMessage": "Informe uma quantidade entre 1 e 50.",
+            "next": "booking_save"
+        },
+        "booking_save": {
+            "type": "save_lead",
+            "message": "✅ *Solicitação registrada!*\n\nNome: {{lead.name}}\nEntrada: {{lead.checkin}}\nSaída: {{lead.checkout}}\nHóspedes: {{lead.guests}}\n\nNossa equipe poderá continuar o atendimento por este WhatsApp. Digite *menu* para voltar ao início."
+        },
+        "human_handoff": {
+            "type": "handoff",
+            "durationMinutes": 60,
+            "message": "🙋 Atendimento humano solicitado.\n\nO bot ficará pausado por 60 minutos para que uma pessoa da equipe continue a conversa. Para reativá-lo antes, digite *menu*."
+        }
+    }
+}

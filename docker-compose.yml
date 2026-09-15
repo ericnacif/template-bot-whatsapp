@@ -1,0 +1,37 @@
+services:
+    bot:
+        build: .
+        restart: unless-stopped
+        stdin_open: true
+        tty: true
+        env_file:
+            - .env
+        environment:
+            SESSION_DRIVER: redis
+            REDIS_URL: redis://redis:6379
+            HEALTH_PORT: 3000
+        ports:
+            - '3000:3000'
+        volumes:
+            - whatsapp_auth:/app/.wwebjs_auth
+            - bot_data:/app/data
+        depends_on:
+            redis:
+                condition: service_healthy
+
+    redis:
+        image: redis:7-alpine
+        restart: unless-stopped
+        command: redis-server --appendonly yes
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+volumes:
+    whatsapp_auth:
+    bot_data:
+    redis_data:
