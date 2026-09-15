@@ -30,8 +30,12 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+# O lifecycle "prepare" é usado apenas pelo Husky em desenvolvimento.
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY . .
+
+RUN chown -R node:node /app
+USER node
 
 CMD ["node", "index.js"]

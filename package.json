@@ -1,7 +1,7 @@
 {
     "name": "template-bot-whatsapp",
-    "version": "1.0.0",
-    "description": "Template inicial em Node.js para criar um assistente de WhatsApp",
+    "version": "1.1.0",
+    "description": "Boilerplate Node.js para bots de WhatsApp com fluxos, sessões, Redis e testes",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
@@ -10,6 +10,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "lint": "eslint .",
+        "check": "npm run lint && prettier --check . && npm test",
+        "audit": "npm audit --omit=dev",
         "format": "prettier --write .",
         "prepare": "husky"
     },
@@ -17,7 +19,15 @@
         "type": "git",
         "url": "git+https://github.com/ericnacif/template-bot-whatsapp.git"
     },
-    "keywords": [],
+    "keywords": [
+        "whatsapp",
+        "whatsapp-bot",
+        "nodejs",
+        "automation",
+        "chatbot",
+        "redis",
+        "boilerplate"
+    ],
     "author": "Eric Nacif",
     "license": "MIT",
     "type": "commonjs",
@@ -29,20 +39,20 @@
         "node": ">=18"
     },
     "dependencies": {
-        "dotenv": "^16.4.7",
+        "dotenv": "^16.6.1",
         "qrcode-terminal": "^0.12.0",
         "redis": "^4.7.0",
-        "whatsapp-web.js": "^1.34.6"
+        "whatsapp-web.js": "^1.34.7"
     },
     "devDependencies": {
-        "@commitlint/cli": "^20.5.0",
-        "@commitlint/config-conventional": "^20.5.0",
-        "@eslint/js": "^9.17.0",
-        "eslint": "^9.17.0",
+        "@commitlint/cli": "^20.5.3",
+        "@commitlint/config-conventional": "^20.5.3",
+        "@eslint/js": "^9.39.5",
+        "eslint": "^9.39.5",
         "eslint-config-prettier": "^9.1.0",
         "globals": "^15.14.0",
         "husky": "^9.1.7",
-        "prettier": "^3.4.2",
-        "vitest": "^4.1.8"
+        "prettier": "^3.9.6",
+        "vitest": "^4.1.11"
     }
 }
