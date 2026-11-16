@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="250" viewBox="0 0 960 250" role="img" aria-labelledby="title desc">
+  <title id="title">WhatsApp Bot Boilerplate</title>
+  <desc id="desc">Configurable conversational automation, an open-source Node.js project by Eric Nacif.</desc>
+  <rect x="5" y="5" width="950" height="240" rx="21" fill="#111111"/>
+  <rect x="2" y="2" width="950" height="236" rx="21" fill="#1F6B3A" stroke="#111111" stroke-width="3"/>
+  <rect x="29" y="26" width="168" height="27" rx="3" fill="#F2DC3B" stroke="#111111" stroke-width="1.5"/>
+  <text x="113" y="44" fill="#111111" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1.5">OPEN SOURCE / 01</text>
+  <text x="920" y="44" fill="#F4F1E8" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" text-anchor="end" letter-spacing="1.5">ERIC NACIF / NODE.JS</text>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="900" font-style="italic" letter-spacing="-2" fill="#F4F1E8">
+    <text x="28" y="119">WHATSAPP BOT</text>
+    <text x="28" y="181">BOILERPLATE<tspan fill="#F2DC3B">.</tspan></text>
+  </g>
+  <path d="M31 197H921" stroke="#F4F1E8" stroke-width="1.5" stroke-dasharray="8 7" opacity=".65"/>
+  <text x="31" y="221" fill="#F4F1E8" font-family="Arial, Helvetica, sans-serif" font-size="15">Configurable conversational automation.</text>
+  <text x="920" y="221" fill="#F4F1E8" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" text-anchor="end" letter-spacing="1">FLOWS / SESSIONS / REDIS</text>
+</svg>
